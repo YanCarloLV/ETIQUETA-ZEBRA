@@ -464,6 +464,7 @@ let groqKey = '';
 let recognition = null;
 let isListening = false;
 let fullTranscript = '';
+let interimTranscript = ''; // iOS fix: save interim too
 let pendingTranscript = '';
 
 // ════════════════════════════════════════
@@ -536,6 +537,7 @@ function startListen() {
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
   if (!SR) { showToast('Usa Chrome en Android','err'); return; }
   fullTranscript = '';
+  interimTranscript = '';
   document.getElementById('ltFinal').textContent = '';
   document.getElementById('ltInterim').textContent = '';
   document.getElementById('liveBox').classList.add('show');
@@ -546,6 +548,7 @@ function startListen() {
   recognition.lang = 'es-MX';
   recognition.continuous = true;
   recognition.interimResults = true;
+  recognition.maxAlternatives = 1;
 
   recognition.onstart = () => {
     isListening = true;
@@ -560,22 +563,28 @@ function startListen() {
     let interim = '';
     for (let i = e.resultIndex; i < e.results.length; i++) {
       const t = e.results[i][0].transcript;
-      if (e.results[i].isFinal) fullTranscript += t + ' ';
-      else interim += t;
+      if (e.results[i].isFinal) {
+        fullTranscript += t + ' ';
+      } else {
+        interim += t;
+      }
     }
+    // iOS fix: save interim so it can be rescued on stop
+    if (interim) interimTranscript = interim;
     document.getElementById('ltFinal').textContent = fullTranscript;
-    document.getElementById('ltInterim').textContent = interim;
+    document.getElementById('ltInterim').textContent = interim || interimTranscript;
   };
 
   recognition.onerror = e => {
     if (e.error === 'no-speech') return;
-    if (e.error === 'not-allowed') showToast('Permite el micrófono en Chrome','err');
-    else showToast('Error micrófono: '+e.error,'warn');
-    stopListen();
+    if (e.error === 'not-allowed') showToast('Permite el micrófono','err');
   };
 
+  // iOS stops recognition after silence — auto-restart
   recognition.onend = () => {
-    if (isListening) try { recognition.start(); } catch(e) { stopListen(); }
+    if (isListening) {
+      setTimeout(() => { try { if (isListening) recognition.start(); } catch(e){} }, 150);
+    }
   };
 
   recognition.start();
@@ -590,7 +599,10 @@ function stopListen() {
   document.getElementById('listenSub').textContent = 'Pon altavoz y toca el micrófono';
   document.getElementById('waveform').classList.remove('on');
 
-  const text = fullTranscript.trim();
+  // iOS fix: if no final text, rescue the interim text
+  const text = (fullTranscript + ' ' + interimTranscript).trim();
+  interimTranscript = '';
+
   if (!text) { showToast('No se escuchó nada. Intenta de nuevo.','warn'); return; }
 
   pendingTranscript = text;
