@@ -1,0 +1,938 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#0d1117">
+<title>Bitácora Vueltas 🚛</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0d1117;--s1:#161b27;--s2:#1e2636;--s3:#263047;
+  --amber:#f59e0b;--amber-dim:rgba(245,158,11,.12);
+  --green:#22c55e;--green-dim:rgba(34,197,94,.12);
+  --red:#ef4444;--blue:#60a5fa;--purple:#a78bfa;
+  --text:#e2e8f0;--muted:#64748b;--border:rgba(245,158,11,.14);
+  --border2:rgba(255,255,255,.06);
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%}
+body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--bg);color:var(--text);overflow-x:hidden}
+
+/* HEADER */
+.hdr{
+  background:var(--s1);border-bottom:1px solid var(--border2);
+  padding:12px 16px;position:sticky;top:0;z-index:100;
+}
+.hdr-row{display:flex;align-items:center;justify-content:space-between}
+.brand{display:flex;align-items:center;gap:9px}
+.brand-icon{font-size:24px}
+.brand h1{font-size:17px;font-weight:800;color:var(--amber)}
+.brand p{font-size:10px;color:var(--muted);font-family:'Space Mono',monospace}
+.wk-btn{background:var(--amber);color:#000;font-size:11px;font-weight:800;padding:5px 12px;border-radius:20px;cursor:pointer;font-family:'Space Mono',monospace}
+
+/* GROQ BAR */
+.groq-bar{
+  display:flex;gap:7px;align-items:center;margin-top:10px;
+}
+.groq-bar input{
+  flex:1;background:rgba(255,255,255,.05);border:1px solid var(--border2);
+  border-radius:9px;color:var(--text);font-size:11px;
+  padding:7px 10px;outline:none;font-family:'Space Mono',monospace;
+}
+.groq-bar input:focus{border-color:var(--amber)}
+.groq-bar input::placeholder{color:var(--muted)}
+.groq-save{
+  background:var(--s3);border:1px solid var(--border);
+  color:var(--amber);font-size:11px;font-weight:800;
+  padding:7px 11px;border-radius:9px;cursor:pointer;
+  font-family:'Plus Jakarta Sans',sans-serif;white-space:nowrap;
+}
+.groq-status{font-size:10px;color:var(--muted);margin-top:4px;font-family:'Space Mono',monospace}
+.groq-status.ok{color:var(--green)}
+
+/* TABS */
+.tabs{display:flex;background:var(--s1);border-bottom:1px solid var(--border2);position:sticky;top:0;z-index:99}
+.tab{flex:1;padding:11px 4px;text-align:center;font-size:10px;font-weight:800;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;transition:.15s;text-transform:uppercase;letter-spacing:.5px}
+.tab.active{color:var(--amber);border-bottom-color:var(--amber)}
+
+/* PAGES */
+.page{display:none;padding:14px 14px 90px}
+.page.active{display:block}
+
+/* ── LISTEN SECTION ── */
+.listen-wrap{background:var(--s1);border:1px solid var(--border2);border-radius:18px;padding:22px 16px;text-align:center;margin-bottom:14px}
+.mic-outer{position:relative;width:86px;height:86px;margin:0 auto 14px}
+.mic-ring{
+  position:absolute;inset:-8px;border-radius:50%;
+  border:2px solid rgba(239,68,68,.3);
+  animation:ring-out 1.8s ease-out infinite;opacity:0;
+}
+.mic-ring2{animation-delay:.6s}
+@keyframes ring-out{0%{transform:scale(.9);opacity:.6}100%{transform:scale(1.3);opacity:0}}
+.mic-btn{
+  width:86px;height:86px;border-radius:50%;border:none;
+  background:linear-gradient(135deg,var(--s2),var(--s3));
+  font-size:36px;cursor:pointer;
+  box-shadow:0 0 0 3px var(--border),0 8px 24px rgba(0,0,0,.5);
+  transition:.2s;display:flex;align-items:center;justify-content:center;
+  position:relative;z-index:1;
+}
+.mic-btn:active{transform:scale(.93)}
+.mic-btn.on{background:linear-gradient(135deg,#7f1d1d,#991b1b);box-shadow:0 0 0 3px rgba(239,68,68,.4),0 8px 24px rgba(239,68,68,.3)}
+.mic-btn.on + .mic-ring,.mic-btn.on ~ .mic-ring2{opacity:.6}
+.listen-ttl{font-size:15px;font-weight:800;margin-bottom:5px}
+.listen-sub{font-size:12px;color:var(--muted);line-height:1.5}
+
+/* Waveform */
+.waveform{display:flex;align-items:center;justify-content:center;gap:3px;height:28px;margin:10px 0;opacity:0;transition:.3s}
+.waveform.on{opacity:1}
+.bar{width:3px;border-radius:3px;background:var(--red);animation:wv 1s ease-in-out infinite}
+.bar:nth-child(1){height:6px;animation-delay:0s}
+.bar:nth-child(2){height:16px;animation-delay:.1s}
+.bar:nth-child(3){height:24px;animation-delay:.2s}
+.bar:nth-child(4){height:12px;animation-delay:.3s}
+.bar:nth-child(5){height:22px;animation-delay:.15s}
+.bar:nth-child(6){height:8px;animation-delay:.25s}
+.bar:nth-child(7){height:18px;animation-delay:.05s}
+@keyframes wv{0%,100%{transform:scaleY(1)}50%{transform:scaleY(.25)}}
+
+/* Live transcript */
+.live-transcript{
+  background:var(--bg);border:1px solid var(--border2);
+  border-radius:11px;padding:11px 13px;
+  text-align:left;font-size:13px;line-height:1.7;
+  min-height:52px;display:none;margin-top:10px;
+}
+.live-transcript.show{display:block}
+.lt-final{color:var(--text)}
+.lt-interim{color:var(--muted);font-style:italic}
+.lt-label{font-size:9px;color:var(--muted);font-family:'Space Mono',monospace;text-transform:uppercase;letter-spacing:1px;margin-bottom:5px}
+
+/* ── AI RESULT CARD ── */
+.result-card{
+  background:var(--s1);border:1px solid rgba(34,197,94,.2);
+  border-left:3px solid var(--green);
+  border-radius:16px;padding:16px;
+  margin-top:12px;display:none;
+}
+.result-card.show{display:block;animation:fadeUp .3s ease}
+@keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+.rc-tag{font-size:9px;font-weight:800;color:var(--green);text-transform:uppercase;letter-spacing:1.5px;font-family:'Space Mono',monospace;margin-bottom:10px}
+
+/* Summary block */
+.summary-block{
+  background:var(--bg);border:1px solid var(--border2);
+  border-radius:11px;padding:13px;margin-bottom:13px;
+}
+.sb-title{font-size:10px;font-weight:700;color:var(--amber);text-transform:uppercase;letter-spacing:1px;font-family:'Space Mono',monospace;margin-bottom:7px}
+
+/* Info chips from AI */
+.info-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-bottom:13px}
+.info-chip{background:var(--s2);border:1px solid var(--border2);border-radius:10px;padding:10px 11px}
+.ic-label{font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;font-family:'Space Mono',monospace;margin-bottom:3px}
+.ic-val{font-size:13px;font-weight:700;color:var(--text)}
+.ic-val.accent{color:var(--amber)}
+.ic-val.green{color:var(--green)}
+
+/* Vueltas big */
+.vueltas-hero{
+  display:flex;align-items:center;gap:12px;
+  background:var(--green-dim);border:1px solid rgba(34,197,94,.25);
+  border-radius:12px;padding:13px 14px;margin-bottom:13px;
+}
+.vh-num{font-size:44px;font-weight:800;color:var(--green);font-family:'Space Mono',monospace;line-height:1}
+.vh-info strong{display:block;font-size:14px;font-weight:800}
+.vh-info span{font-size:12px;color:var(--muted)}
+
+.edit-wrap{margin-bottom:13px}
+.edit-wrap label{font-size:11px;color:var(--muted);display:block;margin-bottom:6px}
+.v-edit{
+  width:100%;background:var(--s2);border:1px solid var(--border);
+  border-radius:10px;color:var(--text);font-family:'Space Mono',monospace;
+  font-size:22px;font-weight:700;padding:10px;text-align:center;outline:none;
+}
+.v-edit:focus{border-color:var(--green)}
+.conf-hint{font-size:11px;text-align:center;margin-top:6px}
+.conf-hint.hi{color:var(--green)}
+.conf-hint.md{color:var(--amber)}
+.conf-hint.lo{color:var(--muted)}
+
+.btn-ok{
+  width:100%;padding:14px;
+  background:linear-gradient(135deg,var(--green),#16a34a);
+  border:none;border-radius:13px;color:#fff;
+  font-size:15px;font-weight:800;cursor:pointer;
+  font-family:'Plus Jakarta Sans',sans-serif;
+  display:flex;align-items:center;justify-content:center;gap:8px;
+  box-shadow:0 4px 18px rgba(34,197,94,.3);transition:.15s;
+}
+.btn-ok:active{transform:scale(.97)}
+
+/* Analyzing loader */
+.ai-loader{display:none;text-align:center;padding:20px}
+.ai-loader.show{display:block}
+.spinner{width:36px;height:36px;border:3px solid var(--border2);border-top-color:var(--amber);border-radius:50%;animation:spin .7s linear infinite;margin:0 auto 10px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.ai-loader p{font-size:12px;color:var(--muted)}
+
+/* Divider */
+.div{display:flex;align-items:center;gap:9px;margin:13px 0;color:var(--muted);font-size:11px}
+.div::before,.div::after{content:'';flex:1;height:1px;background:var(--border2)}
+
+/* Manual */
+.btn-manual-toggle{
+  width:100%;padding:11px;background:transparent;
+  border:1px dashed rgba(255,255,255,.1);border-radius:12px;
+  color:var(--muted);font-size:13px;font-weight:700;
+  cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;
+  transition:.2s;display:flex;align-items:center;justify-content:center;gap:7px;
+}
+.btn-manual-toggle:hover{border-color:var(--amber);color:var(--amber)}
+.manual-form{background:var(--s1);border:1px solid var(--border2);border-radius:14px;padding:14px;margin-top:9px;display:none}
+.manual-form.show{display:block}
+.mf-row{margin-bottom:10px}
+.mf-row label{font-size:11px;color:var(--muted);display:block;margin-bottom:5px}
+.mf-row input,.mf-row textarea{
+  width:100%;background:var(--s2);border:1px solid var(--border2);
+  border-radius:9px;color:var(--text);font-size:14px;
+  padding:10px 12px;outline:none;font-family:'Plus Jakarta Sans',sans-serif;
+}
+.mf-row textarea{resize:vertical;min-height:68px}
+.mf-row input:focus,.mf-row textarea:focus{border-color:var(--amber)}
+
+/* SECTION */
+.stitle{font-size:10px;font-weight:800;color:var(--amber);text-transform:uppercase;letter-spacing:1.5px;font-family:'Space Mono',monospace;margin-bottom:12px;display:flex;align-items:center;gap:6px}
+
+/* DAY CARDS */
+.day-card{background:var(--s1);border:1px solid var(--border2);border-radius:14px;margin-bottom:9px;overflow:hidden}
+.day-head{display:flex;justify-content:space-between;align-items:center;padding:13px 14px;cursor:pointer}
+.day-name{font-size:13px;font-weight:800}
+.day-meta{font-size:10px;color:var(--muted);font-family:'Space Mono',monospace;margin-top:1px}
+.day-badge{background:var(--amber);color:#000;font-size:12px;font-weight:800;padding:4px 11px;border-radius:18px;font-family:'Space Mono',monospace}
+.day-body{padding:0 14px 12px;display:none}
+.day-body.open{display:block}
+
+/* Entry */
+.entry{background:var(--bg);border-radius:10px;padding:10px 11px;margin-bottom:7px;display:flex;gap:8px;align-items:flex-start}
+.e-time{color:var(--amber);font-family:'Space Mono',monospace;font-size:9px;margin-top:2px;white-space:nowrap}
+.e-body{flex:1;min-width:0}
+.e-summary{font-size:12px;color:var(--text);line-height:1.6;margin-bottom:4px}
+.e-tags{display:flex;flex-wrap:wrap;gap:4px}
+.etag{font-size:9px;font-weight:700;padding:2px 7px;border-radius:8px}
+.etag-src-mic{background:rgba(239,68,68,.1);color:#f87171}
+.etag-src-manual{background:rgba(100,116,139,.1);color:var(--muted)}
+.etag-vuelta{background:var(--green-dim);color:var(--green);border:1px solid rgba(34,197,94,.2)}
+.etag-origen{background:rgba(96,165,250,.08);color:#93c5fd}
+.etag-pago{background:rgba(167,139,250,.08);color:#c4b5fd}
+.e-del{background:none;border:none;color:var(--muted);cursor:pointer;font-size:14px;padding:0 2px;flex-shrink:0}
+.e-del:hover{color:var(--red)}
+
+/* Empty */
+.empty{text-align:center;padding:40px 16px}
+.empty .ico{font-size:48px;opacity:.3;margin-bottom:10px}
+.empty p{font-size:13px;color:var(--muted);line-height:1.7}
+
+/* WEEK */
+.stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:12px}
+.sbox{background:var(--s1);border:1px solid var(--border2);border-radius:13px;padding:14px;text-align:center}
+.sbox-n{font-size:32px;font-weight:800;color:var(--amber);font-family:'Space Mono',monospace}
+.sbox-l{font-size:11px;color:var(--muted);margin-top:2px}
+.week-hero{background:linear-gradient(135deg,var(--s1),var(--s2));border:1px solid rgba(245,158,11,.3);border-radius:16px;padding:18px;margin-bottom:12px}
+.wh-row{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px}
+.wh-label{font-size:10px;color:var(--muted);font-family:'Space Mono',monospace}
+.wh-sub{font-size:11px;color:var(--muted);margin-top:2px}
+.wh-total{font-size:48px;font-weight:800;color:var(--amber);font-family:'Space Mono',monospace;line-height:1}
+.wk-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+.wkd{text-align:center}
+.wkd-n{font-size:8px;color:var(--muted);font-family:'Space Mono',monospace;margin-bottom:3px;text-transform:uppercase}
+.wkd-v{background:var(--bg);border-radius:7px;padding:7px 2px;font-size:12px;font-weight:800;color:var(--muted);font-family:'Space Mono',monospace;border:1px solid var(--border2)}
+.wkd-v.act{color:var(--amber);border-color:rgba(245,158,11,.35);background:var(--amber-dim)}
+.wkd-v.today{color:var(--green);border-color:rgba(34,197,94,.35);background:var(--green-dim)}
+.btn-corte{width:100%;padding:13px;background:var(--s2);border:1px solid rgba(245,158,11,.4);border-radius:13px;color:var(--amber);font-size:14px;font-weight:800;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;margin-bottom:18px;transition:.2s}
+.btn-corte:active{background:var(--amber-dim)}
+.corte-item{background:var(--s1);border:1px solid var(--border2);border-radius:13px;padding:14px;margin-bottom:8px}
+.corte-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:9px}
+.corte-ttl{font-size:13px;font-weight:800}
+.corte-sub{font-size:9px;color:var(--muted);font-family:'Space Mono',monospace}
+.corte-total{font-size:32px;font-weight:800;color:var(--amber);font-family:'Space Mono',monospace}
+.chips{display:flex;flex-wrap:wrap;gap:5px}
+.chip{background:var(--amber-dim);border:1px solid rgba(245,158,11,.2);color:var(--amber);font-size:9px;font-weight:700;padding:3px 8px;border-radius:10px;font-family:'Space Mono',monospace}
+
+/* CONFIG */
+.cfg-sec{margin-bottom:16px}
+.cfg-lbl{font-size:11px;color:var(--muted);font-family:'Space Mono',monospace;margin-bottom:6px}
+.cfg-in{width:100%;background:var(--s2);border:1px solid var(--border2);border-radius:11px;color:var(--text);font-size:14px;padding:11px 13px;outline:none;font-family:'Plus Jakarta Sans',sans-serif}
+.cfg-in:focus{border-color:var(--amber)}
+.btn-savecfg{width:100%;padding:13px;background:var(--amber);border:none;border-radius:12px;color:#000;font-size:15px;font-weight:800;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;margin-top:6px}
+
+/* TIP */
+.tip{background:rgba(96,165,250,.07);border:1px solid rgba(96,165,250,.18);border-radius:12px;padding:12px 13px;margin-bottom:13px;font-size:12px;color:#93c5fd;line-height:1.65}
+.tip strong{color:#bfdbfe}
+
+/* BNAV */
+.bnav{position:fixed;bottom:0;left:0;right:0;background:var(--s1);border-top:1px solid var(--border2);display:flex;z-index:100;padding-bottom:env(safe-area-inset-bottom,0px)}
+.bni{flex:1;padding:9px 4px;text-align:center;cursor:pointer}
+.bni .bi{font-size:19px;display:block}
+.bni .bl{font-size:9px;color:var(--muted);font-family:'Space Mono',monospace;margin-top:1px;text-transform:uppercase}
+.bni.active .bl{color:var(--amber)}
+
+/* TOAST */
+.toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%) translateY(14px);background:var(--green);color:#fff;padding:9px 20px;border-radius:20px;font-size:12px;font-weight:800;opacity:0;transition:.25s;z-index:9999;white-space:nowrap}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.toast.err{background:var(--red)}
+.toast.warn{background:var(--amber);color:#000}
+
+::-webkit-scrollbar{width:3px}
+::-webkit-scrollbar-track{background:var(--bg)}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="hdr">
+  <div class="hdr-row">
+    <div class="brand">
+      <span class="brand-icon">🚛</span>
+      <div><h1>Bitácora</h1><p id="driverName">cargando...</p></div>
+    </div>
+    <div class="wk-btn" onclick="switchPage('semana')">📅 Semana</div>
+  </div>
+  <!-- Groq key bar -->
+  <div class="groq-bar">
+    <input type="password" id="groqKeyInput" placeholder="API Key de Groq (gratis en console.groq.com)">
+    <button class="groq-save" onclick="saveGroqKey()">Guardar</button>
+  </div>
+  <div class="groq-status" id="groqStatus">⚠️ Sin clave Groq — solo detecta número de vueltas</div>
+</div>
+
+<!-- TABS -->
+<div class="tabs">
+  <div class="tab active" id="tab-registrar" onclick="switchPage('registrar')">🎙 Registrar</div>
+  <div class="tab" id="tab-bitacora" onclick="switchPage('bitacora')">📖 Bitácora</div>
+  <div class="tab" id="tab-semana" onclick="switchPage('semana')">📊 Semana</div>
+  <div class="tab" id="tab-config" onclick="switchPage('config')">⚙️ Ajustes</div>
+</div>
+
+<!-- ══ PAGE: REGISTRAR ══ -->
+<div class="page active" id="page-registrar">
+
+  <div class="tip">
+    <strong>💡 Cómo usarlo:</strong> Cuando papá llame, pon el <strong>altavoz</strong> y toca el botón rojo 🔴. La app escucha todo lo que dice y luego la IA hace el resumen: origen, destino, pago, vueltas. <strong>¡Chrome en Android, sin costo!</strong>
+  </div>
+
+  <!-- Listen card -->
+  <div class="listen-wrap">
+    <div class="mic-outer">
+      <button class="mic-btn" id="micBtn" onclick="toggleListen()">🎤</button>
+      <div class="mic-ring"></div>
+      <div class="mic-ring mic-ring2"></div>
+    </div>
+    <div class="listen-ttl" id="listenTtl">Listo para escuchar</div>
+    <div class="listen-sub" id="listenSub">Pon altavoz y toca el micrófono</div>
+    <div class="waveform" id="waveform">
+      <div class="bar"></div><div class="bar"></div><div class="bar"></div>
+      <div class="bar"></div><div class="bar"></div><div class="bar"></div>
+      <div class="bar"></div>
+    </div>
+    <div class="live-transcript" id="liveBox">
+      <div class="lt-label">Escuchando...</div>
+      <span class="lt-final" id="ltFinal"></span><span class="lt-interim" id="ltInterim"></span>
+    </div>
+  </div>
+
+  <!-- AI loader -->
+  <div class="ai-loader" id="aiLoader">
+    <div class="spinner"></div>
+    <p id="aiLoaderTxt">Analizando con IA...</p>
+  </div>
+
+  <!-- Result card -->
+  <div class="result-card" id="resultCard">
+    <div class="rc-tag">✅ Llamada analizada por IA</div>
+
+    <!-- Summary text -->
+    <div class="summary-block">
+      <div class="sb-title">📋 Resumen</div>
+      <div id="summaryText" style="font-size:13px;line-height:1.7;color:var(--text)"></div>
+    </div>
+
+    <!-- Info chips -->
+    <div class="info-grid" id="infoGrid"></div>
+
+    <!-- Vueltas -->
+    <div class="vueltas-hero">
+      <div class="vh-num" id="vHeroNum">0</div>
+      <div class="vh-info">
+        <strong>Vueltas detectadas</strong>
+        <span id="vHeroHint">Revisa y corrige si es necesario</span>
+      </div>
+    </div>
+
+    <div class="edit-wrap">
+      <label>✏️ Corregir vueltas si hay error:</label>
+      <input type="number" class="v-edit" id="vEdit" min="0" max="99" value="0">
+      <div class="conf-hint" id="confHint"></div>
+    </div>
+
+    <button class="btn-ok" onclick="confirmEntry()">✅ Confirmar y guardar</button>
+  </div>
+
+  <!-- Divider + manual -->
+  <div class="div">— o captura manual —</div>
+  <button class="btn-manual-toggle" onclick="toggleManual()">✍️ Escribir a mano</button>
+  <div class="manual-form" id="manualForm">
+    <div class="mf-row"><label>Número de vueltas</label><input type="number" id="mVueltas" placeholder="ej: 4" min="0"></div>
+    <div class="mf-row"><label>Origen → Destino (opcional)</label><input type="text" id="mOrigen" placeholder="ej: banco de arena → planta norte"></div>
+    <div class="mf-row"><label>Pago por vuelta (opcional)</label><input type="text" id="mPago" placeholder="ej: $120 cada una"></div>
+    <div class="mf-row"><label>Notas adicionales (opcional)</label><textarea id="mNotas" placeholder="ej: camino cerrado a las 6, tardó más por tráfico..."></textarea></div>
+    <button class="btn-ok" onclick="saveManual()">✅ Guardar entrada</button>
+  </div>
+</div>
+
+<!-- ══ PAGE: BITÁCORA ══ -->
+<div class="page" id="page-bitacora">
+  <div class="stitle">📖 Registro diario</div>
+  <div id="logContainer"></div>
+</div>
+
+<!-- ══ PAGE: SEMANA ══ -->
+<div class="page" id="page-semana">
+  <div class="stitle">📊 Esta semana</div>
+  <div class="stats-grid">
+    <div class="sbox"><div class="sbox-n" id="wkTotal">0</div><div class="sbox-l">Total vueltas</div></div>
+    <div class="sbox"><div class="sbox-n" id="wkDays">0</div><div class="sbox-l">Días trabajados</div></div>
+  </div>
+  <div class="week-hero">
+    <div class="wh-row">
+      <div><div class="wh-label" id="wkRange">Semana</div><div class="wh-sub">vueltas totales</div></div>
+      <div class="wh-total" id="wkBig">0</div>
+    </div>
+    <div class="wk-grid" id="weekGrid"></div>
+  </div>
+  <button class="btn-corte" onclick="makeCorte()">✂️ Hacer corte del sábado</button>
+  <div class="stitle">🗂️ Cortes anteriores</div>
+  <div id="cortesContainer"></div>
+</div>
+
+<!-- ══ PAGE: CONFIG ══ -->
+<div class="page" id="page-config">
+  <div class="stitle">⚙️ Configuración</div>
+  <div class="cfg-sec"><div class="cfg-lbl">Nombre del chofer (papá)</div><input class="cfg-in" id="cfgName" placeholder="ej: Papá / Roberto"></div>
+  <div class="cfg-sec"><div class="cfg-lbl">Tipo de carga que transporta</div><input class="cfg-in" id="cfgCarga" placeholder="ej: arena, tierra, grava, concreto..."></div>
+  <div class="cfg-sec"><div class="cfg-lbl">Zona / ciudad donde trabaja</div><input class="cfg-in" id="cfgZona" placeholder="ej: Chihuahua, Juárez..."></div>
+  <button class="btn-savecfg" onclick="saveConfig()">💾 Guardar configuración</button>
+
+  <div style="margin-top:22px">
+    <div class="stitle">🆓 Cómo obtener Groq gratis</div>
+    <div style="background:var(--s1);border-radius:13px;padding:14px;font-size:12px;color:var(--muted);line-height:1.8">
+      <p><strong style="color:var(--text)">1.</strong> Ve a <strong style="color:var(--amber)">console.groq.com</strong></p>
+      <p><strong style="color:var(--text)">2.</strong> Crea cuenta con tu correo o Google</p>
+      <p><strong style="color:var(--text)">3.</strong> En el menú izquierdo toca <em>"API Keys"</em></p>
+      <p><strong style="color:var(--text)">4.</strong> Toca <em>"Create API Key"</em></p>
+      <p><strong style="color:var(--text)">5.</strong> Copia la clave y pégala arriba en la barra</p>
+      <br>
+      <p style="color:rgba(34,197,94,.8)">✅ <strong style="color:var(--green)">Completamente gratis</strong>, sin tarjeta, sin límite diario para uso normal. Groq usa Llama 3 de Meta.</p>
+      <br>
+      <p><strong style="color:var(--text)">Sin clave Groq:</strong> la app igual funciona, solo detecta el número de vueltas pero no hace resumen inteligente.</p>
+    </div>
+  </div>
+</div>
+
+<!-- BOTTOM NAV -->
+<div class="bnav">
+  <div class="bni active" id="nav-registrar" onclick="switchPage('registrar')"><span class="bi">🎙</span><span class="bl">Registrar</span></div>
+  <div class="bni" id="nav-bitacora" onclick="switchPage('bitacora')"><span class="bi">📖</span><span class="bl">Bitácora</span></div>
+  <div class="bni" id="nav-semana" onclick="switchPage('semana')"><span class="bi">📊</span><span class="bl">Semana</span></div>
+  <div class="bni" id="nav-config" onclick="switchPage('config')"><span class="bi">⚙️</span><span class="bl">Ajustes</span></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ════════════════════════════════════════
+//  STATE
+// ════════════════════════════════════════
+let S = {
+  config: { name:'Papá', carga:'carga', zona:'' },
+  log: [],   // { id, date, time, vueltas, summary, origen, destino, pago, transcript, source }
+  cortes: []
+};
+let groqKey = '';
+let recognition = null;
+let isListening = false;
+let fullTranscript = '';
+let pendingTranscript = '';
+
+// ════════════════════════════════════════
+//  BOOT
+// ════════════════════════════════════════
+document.addEventListener('DOMContentLoaded', () => {
+  loadStorage();
+  updateHeader();
+  loadConfigUI();
+  renderLog();
+  renderWeek();
+});
+
+function loadStorage() {
+  try {
+    const d = JSON.parse(localStorage.getItem('bv3') || '{}');
+    if (d.config) S.config = { ...S.config, ...d.config };
+    if (d.log) S.log = d.log;
+    if (d.cortes) S.cortes = d.cortes;
+    const gk = localStorage.getItem('bv3_groq');
+    if (gk) { groqKey = gk; updateGroqStatus(); }
+  } catch(e) {}
+}
+function save() { localStorage.setItem('bv3', JSON.stringify(S)); }
+function updateHeader() { document.getElementById('driverName').textContent = S.config.name || 'Chofer'; }
+
+function saveGroqKey() {
+  const k = document.getElementById('groqKeyInput').value.trim();
+  if (!k) { showToast('Ingresa una key válida','warn'); return; }
+  groqKey = k;
+  localStorage.setItem('bv3_groq', k);
+  updateGroqStatus();
+  showToast('✅ Groq key guardada');
+}
+function updateGroqStatus() {
+  const el = document.getElementById('groqStatus');
+  const inp = document.getElementById('groqKeyInput');
+  if (groqKey) {
+    el.textContent = '✅ Groq conectado — resúmenes inteligentes activados';
+    el.className = 'groq-status ok';
+    inp.value = '•'.repeat(24);
+  } else {
+    el.textContent = '⚠️ Sin Groq — solo detecta número de vueltas (sin resumen)';
+    el.className = 'groq-status';
+  }
+}
+
+// ════════════════════════════════════════
+//  NAVIGATION
+// ════════════════════════════════════════
+function switchPage(p) {
+  document.querySelectorAll('.page').forEach(x => x.classList.remove('active'));
+  document.querySelectorAll('.tab,.bni').forEach(x => x.classList.remove('active'));
+  document.getElementById('page-'+p).classList.add('active');
+  document.getElementById('tab-'+p)?.classList.add('active');
+  document.getElementById('nav-'+p)?.classList.add('active');
+  if (p==='bitacora') renderLog();
+  if (p==='semana') renderWeek();
+  if (p==='config') loadConfigUI();
+}
+
+// ════════════════════════════════════════
+//  SPEECH RECOGNITION
+// ════════════════════════════════════════
+function toggleListen() {
+  if (isListening) stopListen(); else startListen();
+}
+
+function startListen() {
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR) { showToast('Usa Chrome en Android','err'); return; }
+  fullTranscript = '';
+  document.getElementById('ltFinal').textContent = '';
+  document.getElementById('ltInterim').textContent = '';
+  document.getElementById('liveBox').classList.add('show');
+  document.getElementById('resultCard').classList.remove('show');
+  document.getElementById('aiLoader').classList.remove('show');
+
+  recognition = new SR();
+  recognition.lang = 'es-MX';
+  recognition.continuous = true;
+  recognition.interimResults = true;
+
+  recognition.onstart = () => {
+    isListening = true;
+    document.getElementById('micBtn').classList.add('on');
+    document.getElementById('micBtn').textContent = '⏹';
+    document.getElementById('listenTtl').textContent = '🔴 Escuchando llamada...';
+    document.getElementById('listenSub').textContent = 'Toca el botón cuando papá termine de hablar';
+    document.getElementById('waveform').classList.add('on');
+  };
+
+  recognition.onresult = e => {
+    let interim = '';
+    for (let i = e.resultIndex; i < e.results.length; i++) {
+      const t = e.results[i][0].transcript;
+      if (e.results[i].isFinal) fullTranscript += t + ' ';
+      else interim += t;
+    }
+    document.getElementById('ltFinal').textContent = fullTranscript;
+    document.getElementById('ltInterim').textContent = interim;
+  };
+
+  recognition.onerror = e => {
+    if (e.error === 'no-speech') return;
+    if (e.error === 'not-allowed') showToast('Permite el micrófono en Chrome','err');
+    else showToast('Error micrófono: '+e.error,'warn');
+    stopListen();
+  };
+
+  recognition.onend = () => {
+    if (isListening) try { recognition.start(); } catch(e) { stopListen(); }
+  };
+
+  recognition.start();
+}
+
+function stopListen() {
+  isListening = false;
+  if (recognition) { try { recognition.stop(); } catch(e){} }
+  document.getElementById('micBtn').classList.remove('on');
+  document.getElementById('micBtn').textContent = '🎤';
+  document.getElementById('listenTtl').textContent = 'Listo para escuchar';
+  document.getElementById('listenSub').textContent = 'Pon altavoz y toca el micrófono';
+  document.getElementById('waveform').classList.remove('on');
+
+  const text = fullTranscript.trim();
+  if (!text) { showToast('No se escuchó nada. Intenta de nuevo.','warn'); return; }
+
+  pendingTranscript = text;
+
+  if (groqKey) {
+    analyzeWithGroq(text);
+  } else {
+    // Fallback sin IA
+    const { vueltas, confidence } = detectVueltasSimple(text);
+    showResult({
+      vueltas,
+      confidence,
+      summary: text,   // raw transcript as summary
+      origen: '',
+      destino: '',
+      pago: '',
+      notas: ''
+    });
+  }
+}
+
+// ════════════════════════════════════════
+//  GROQ AI ANALYSIS
+// ════════════════════════════════════════
+async function analyzeWithGroq(text) {
+  document.getElementById('aiLoader').classList.add('show');
+  document.getElementById('aiLoaderTxt').textContent = 'Analizando con IA gratuita (Groq)...';
+
+  const driverName = S.config.name || 'el chofer';
+  const carga = S.config.carga || 'carga';
+  const zona = S.config.zona || '';
+
+  const prompt = `Eres un asistente que analiza reportes de voz de un chofer de camión de volteo llamado ${driverName}, que transporta ${carga}${zona ? ' en '+zona : ''}.
+
+El chofer llamó por teléfono y dijo lo siguiente (transcripción de voz a texto, puede tener errores):
+
+"${text}"
+
+Analiza el mensaje y responde SOLO con JSON válido, sin backticks ni explicaciones:
+{
+  "vueltas": <número entero de vueltas/viajes que hizo hoy, 0 si no se menciona>,
+  "origen": "<lugar de donde cargó o salió, cadena vacía si no se menciona>",
+  "destino": "<lugar donde entregó o llegó, cadena vacía si no se menciona>",
+  "pago": "<cuánto le pagaron o cuánto cobra por vuelta, cadena vacía si no se menciona>",
+  "horario": "<a qué hora empezó o terminó, cadena vacía si no se menciona>",
+  "notas": "<cualquier otra información importante: problemas, clima, ruta, etc. Cadena vacía si no hay>",
+  "resumen": "<resumen claro y breve en 1-2 oraciones de lo que reportó el chofer>",
+  "confianza": "<alta, media o baja según qué tan claro fue el mensaje>"
+}`;
+
+  try {
+    const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + groqKey
+      },
+      body: JSON.stringify({
+        model: 'llama-3.3-70b-versatile',
+        max_tokens: 500,
+        temperature: 0.1,
+        messages: [{ role: 'user', content: prompt }]
+      })
+    });
+
+    if (!res.ok) {
+      const err = await res.json().catch(()=>({}));
+      throw new Error(err?.error?.message || 'Error '+res.status);
+    }
+
+    const data = await res.json();
+    const raw = data.choices[0].message.content;
+    const clean = raw.replace(/```json|```/g,'').trim();
+    const parsed = JSON.parse(clean);
+    showResult(parsed);
+
+  } catch(err) {
+    console.error(err);
+    showToast('Error Groq: ' + err.message, 'err');
+    // Fallback sin IA
+    const { vueltas, confidence } = detectVueltasSimple(text);
+    showResult({ vueltas, confidence, summary: text, origen:'', destino:'', pago:'', notas:'' });
+  } finally {
+    document.getElementById('aiLoader').classList.remove('show');
+  }
+}
+
+// ════════════════════════════════════════
+//  SIMPLE DETECTION (sin IA)
+// ════════════════════════════════════════
+function detectVueltasSimple(text) {
+  const t = text.toLowerCase();
+  const keywords = ['vuelta','vueltas','viaje','viajes','corrida','corridas','ronda','rondas'];
+  const numWords = {'una':1,'un':1,'uno':1,'dos':2,'tres':3,'cuatro':4,'cinco':5,'seis':6,'siete':7,'ocho':8,'nueve':9,'diez':10,'once':11,'doce':12,'quince':15,'veinte':20};
+  let best = 0, confidence = 'low';
+
+  for (const kw of keywords) {
+    const m1 = t.match(new RegExp(`(\\d+)\\s+${kw}`, 'i'));
+    const m2 = t.match(new RegExp(`${kw}\\s+(\\d+)`, 'i'));
+    if (m1) { const n=parseInt(m1[1]); if(n>best){best=n;confidence='high';} }
+    if (m2) { const n=parseInt(m2[1]); if(n>best){best=n;confidence='high';} }
+    for (const [w,v] of Object.entries(numWords)) {
+      if (new RegExp(`${w}\\s+${kw}`,'i').test(t) || new RegExp(`${kw}\\s+${w}`,'i').test(t)) {
+        if(v>best){best=v;confidence='high';}
+      }
+    }
+  }
+  return { vueltas: best, confidence };
+}
+
+// ════════════════════════════════════════
+//  SHOW RESULT
+// ════════════════════════════════════════
+function showResult(r) {
+  const vueltas = parseInt(r.vueltas) || 0;
+  const summary = r.resumen || r.summary || pendingTranscript;
+  const confidence = r.confianza || r.confidence || 'media';
+
+  // Summary
+  document.getElementById('summaryText').textContent = summary;
+
+  // Info chips
+  const chips = [];
+  if (r.origen) chips.push({ label:'🚩 Origen', val: r.origen, cls:'etag-origen' });
+  if (r.destino) chips.push({ label:'📍 Destino', val: r.destino, cls:'etag-origen' });
+  if (r.pago) chips.push({ label:'💵 Pago', val: r.pago, cls:'etag-pago' });
+  if (r.horario) chips.push({ label:'🕐 Horario', val: r.horario, cls:'' });
+  if (r.notas) chips.push({ label:'📌 Notas', val: r.notas, cls:'' });
+
+  const grid = document.getElementById('infoGrid');
+  if (chips.length) {
+    grid.innerHTML = chips.map(c => `
+      <div class="info-chip">
+        <div class="ic-label">${c.label}</div>
+        <div class="ic-val">${c.val}</div>
+      </div>`).join('');
+    grid.style.display = 'grid';
+  } else {
+    grid.style.display = 'none';
+    grid.innerHTML = '';
+  }
+
+  // Vueltas hero
+  document.getElementById('vHeroNum').textContent = vueltas;
+  document.getElementById('vEdit').value = vueltas;
+
+  const confEl = document.getElementById('confHint');
+  const confMap = { alta:'hi', high:'hi', media:'md', medium:'md', baja:'lo', low:'lo' };
+  const confIcon = { alta:'✅ Alta confianza', alta2:'✅', high:'✅ Alta confianza', media:'⚠️ Confianza media — verifica', medium:'⚠️ Confianza media — verifica', baja:'❓ Baja confianza — revisa el número', low:'❓ Baja confianza — revisa el número' };
+  confEl.textContent = confIcon[confidence] || '⚠️ Revisa el número';
+  confEl.className = 'conf-hint ' + (confMap[confidence] || 'md');
+
+  // Store data for confirm
+  window._pendingData = { vueltas, summary, origen: r.origen||'', destino: r.destino||'', pago: r.pago||'', notas: r.notas||'', horario: r.horario||'' };
+
+  document.getElementById('resultCard').classList.add('show');
+  document.getElementById('resultCard').scrollIntoView({ behavior:'smooth', block:'center' });
+}
+
+// ════════════════════════════════════════
+//  CONFIRM ENTRY
+// ════════════════════════════════════════
+function confirmEntry() {
+  const vueltas = parseInt(document.getElementById('vEdit').value) || 0;
+  if (vueltas <= 0) { showToast('Indica cuántas vueltas hizo','warn'); return; }
+  const d = window._pendingData || {};
+  addEntry({
+    vueltas,
+    summary: d.summary || pendingTranscript,
+    origen: d.origen, destino: d.destino,
+    pago: d.pago, notas: d.notas, horario: d.horario,
+    source: 'mic'
+  });
+  document.getElementById('resultCard').classList.remove('show');
+  document.getElementById('liveBox').classList.remove('show');
+  fullTranscript = '';
+  pendingTranscript = '';
+  window._pendingData = null;
+}
+
+// ════════════════════════════════════════
+//  MANUAL
+// ════════════════════════════════════════
+function toggleManual() { document.getElementById('manualForm').classList.toggle('show'); }
+function saveManual() {
+  const v = parseInt(document.getElementById('mVueltas').value) || 0;
+  if (v <= 0) { showToast('Indica cuántas vueltas','warn'); return; }
+  addEntry({
+    vueltas: v,
+    summary: document.getElementById('mNotas').value.trim() || `${v} vuelta(s)`,
+    origen: document.getElementById('mOrigen').value.trim(),
+    destino: '',
+    pago: document.getElementById('mPago').value.trim(),
+    notas: '',
+    source: 'manual'
+  });
+  ['mVueltas','mOrigen','mPago','mNotas'].forEach(id => document.getElementById(id).value='');
+  document.getElementById('manualForm').classList.remove('show');
+}
+
+// ════════════════════════════════════════
+//  LOG
+// ════════════════════════════════════════
+function addEntry(e) {
+  const now = new Date();
+  S.log.push({ id:Date.now(), date:dateStr(now), time:now.toTimeString().slice(0,5), ...e });
+  save();
+  showToast(`✅ ${e.vueltas} vuelta(s) guardada(s)`);
+  renderWeek();
+}
+
+function deleteEntry(id) {
+  if (!confirm('¿Eliminar esta entrada?')) return;
+  S.log = S.log.filter(e => e.id !== id);
+  save(); renderLog(); renderWeek();
+  showToast('Eliminada');
+}
+
+function renderLog() {
+  const c = document.getElementById('logContainer');
+  if (!S.log.length) {
+    c.innerHTML=`<div class="empty"><div class="ico">📋</div><p>Sin registros aún.<br>Usa el micrófono para<br>capturar la próxima llamada.</p></div>`;
+    return;
+  }
+  const g = {};
+  S.log.forEach(e => { if(!g[e.date]) g[e.date]=[]; g[e.date].push(e); });
+  const dates = Object.keys(g).sort().reverse();
+  c.innerHTML = dates.map(d => {
+    const entries = g[d].sort((a,b)=>b.time.localeCompare(a.time));
+    const total = entries.reduce((s,e)=>s+e.vueltas,0);
+    return `
+    <div class="day-card">
+      <div class="day-head" onclick="toggleDay('${d}')">
+        <div><div class="day-name">${dayName(d)}</div><div class="day-meta">${fmtDate(d)} · ${entries.length} entrada(s)</div></div>
+        <div class="day-badge">${total} 🔄</div>
+      </div>
+      <div class="day-body" id="db-${d}">
+        ${entries.map(e => {
+          const tags = [];
+          tags.push(`<span class="etag ${e.source==='mic'?'etag-src-mic':'etag-src-manual'}">${e.source==='mic'?'🎤 voz':'✍️ manual'}</span>`);
+          tags.push(`<span class="etag etag-vuelta">🔄 ${e.vueltas} vueltas</span>`);
+          if (e.origen) tags.push(`<span class="etag etag-origen">🚩 ${e.origen}${e.destino?' → '+e.destino:''}</span>`);
+          if (e.pago) tags.push(`<span class="etag etag-pago">💵 ${e.pago}</span>`);
+          if (e.horario) tags.push(`<span class="etag etag-origen">🕐 ${e.horario}</span>`);
+          return `
+          <div class="entry">
+            <div class="e-time">${e.time}</div>
+            <div class="e-body">
+              <div class="e-summary">${e.summary || '(sin resumen)'}</div>
+              <div class="e-tags">${tags.join('')}</div>
+            </div>
+            <button class="e-del" onclick="deleteEntry(${e.id})">🗑</button>
+          </div>`;
+        }).join('')}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function toggleDay(d) { document.getElementById('db-'+d).classList.toggle('open'); }
+
+// ════════════════════════════════════════
+//  WEEK
+// ════════════════════════════════════════
+function renderWeek() {
+  const today = new Date();
+  const mon = getMonday(today);
+  const sun = new Date(mon); sun.setDate(sun.getDate()+6);
+  const dayNames = ['L','M','X','J','V','S','D'];
+  let total=0, workDays=0;
+  const grid = dayNames.map((_,i) => {
+    const d = new Date(mon); d.setDate(d.getDate()+i);
+    const ds = dateStr(d);
+    const t = S.log.filter(e=>e.date===ds).reduce((s,e)=>s+e.vueltas,0);
+    if (t>0){total+=t;workDays++;}
+    return { n:dayNames[i], t, isToday: ds===dateStr(today) };
+  });
+  document.getElementById('wkTotal').textContent = total;
+  document.getElementById('wkDays').textContent = workDays;
+  document.getElementById('wkBig').textContent = total;
+  document.getElementById('wkRange').textContent = `${fmtDate(dateStr(mon))} — ${fmtDate(dateStr(sun))}`;
+  document.getElementById('weekGrid').innerHTML = grid.map(g=>`
+    <div class="wkd"><div class="wkd-n">${g.n}</div><div class="wkd-v ${g.t>0?'act':''} ${g.isToday?'today':''}">${g.t||'–'}</div></div>`).join('');
+  renderCortes();
+}
+
+function makeCorte() {
+  const today = new Date();
+  const mon = getMonday(today);
+  const sun = new Date(mon); sun.setDate(sun.getDate()+6);
+  const entries = S.log.filter(e=>{ const d=new Date(e.date+' 12:00'); return d>=mon&&d<=sun; });
+  if (!entries.length) { showToast('Sin vueltas esta semana','warn'); return; }
+  const total = entries.reduce((s,e)=>s+e.vueltas,0);
+  const byDay = {};
+  entries.forEach(e=>{ byDay[e.date]=(byDay[e.date]||0)+e.vueltas; });
+  S.cortes.unshift({ id:Date.now(), ws:dateStr(mon), we:dateStr(sun), total, byDay });
+  save(); renderCortes();
+  showToast(`✅ Corte: ${total} vueltas esta semana`);
+}
+
+function renderCortes() {
+  const c = document.getElementById('cortesContainer');
+  if (!S.cortes.length) { c.innerHTML=`<div style="text-align:center;color:var(--muted);font-size:12px;padding:18px">Sin cortes aún</div>`; return; }
+  c.innerHTML = S.cortes.map(ct=>`
+    <div class="corte-item">
+      <div class="corte-top">
+        <div><div class="corte-ttl">Semana del ${fmtDate(ct.ws)}</div><div class="corte-sub">al ${fmtDate(ct.we)}</div></div>
+        <div class="corte-total">${ct.total}</div>
+      </div>
+      <div class="chips">${Object.entries(ct.byDay).sort().map(([d,v])=>`<span class="chip">${fmtDate(d)}: ${v}🔄</span>`).join('')}</div>
+    </div>`).join('');
+}
+
+// ════════════════════════════════════════
+//  CONFIG
+// ════════════════════════════════════════
+function loadConfigUI() {
+  document.getElementById('cfgName').value = S.config.name||'';
+  document.getElementById('cfgCarga').value = S.config.carga||'';
+  document.getElementById('cfgZona').value = S.config.zona||'';
+}
+function saveConfig() {
+  S.config.name = document.getElementById('cfgName').value.trim()||'Papá';
+  S.config.carga = document.getElementById('cfgCarga').value.trim();
+  S.config.zona = document.getElementById('cfgZona').value.trim();
+  save(); updateHeader();
+  showToast('✅ Configuración guardada');
+}
+
+// ════════════════════════════════════════
+//  UTILS
+// ════════════════════════════════════════
+function dateStr(d){ return d.toISOString().slice(0,10); }
+function getMonday(d){ const x=new Date(d),day=x.getDay(); x.setDate(x.getDate()-day+(day===0?-6:1)); x.setHours(0,0,0,0); return x; }
+function dayName(ds){ return ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'][new Date(ds+' 12:00').getDay()]; }
+function fmtDate(ds){ return new Date(ds+' 12:00').toLocaleDateString('es-MX',{day:'numeric',month:'short'}); }
+function showToast(msg, type='ok'){
+  const t=document.getElementById('toast');
+  t.textContent=msg;
+  t.className=`toast show ${type==='err'?'err':type==='warn'?'warn':''}`;
+  setTimeout(()=>t.className='toast',3000);
+}
+</script>
+</body>
+</html>
